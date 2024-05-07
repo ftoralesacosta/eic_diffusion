@@ -141,6 +141,7 @@ def DataLoader(data_path,labels,
                npart,
                rank=0,size=1,
                batch_size=64,make_tf_data=True):
+
     particles = []
     jets = []
 
@@ -222,11 +223,23 @@ def DataLoader(data_path,labels,
     
         def _prepare_batches(particles,jets):
             
+            # cond should be set to particles[:,:,-2]. PID
+            #particles = [pT, eta, phi, PID, z]
+            # mask should be if pT is 0
+
+            #SWAP z and PID
+            # particles[:,:,-1],particles[:,:,-2]=\
+            # particles[:,:,-2],particles[:,:,-1] 
+
             nevts = jets.shape[0]
             tf_jet = tf.data.Dataset.from_tensor_slices(jets[:,:-1])
             cond = to_categorical(jets[:,-1], num_classes=num_classes) 
             tf_cond = tf.data.Dataset.from_tensor_slices(cond)
-            mask = np.expand_dims(particles[:,:,-1],-1)
+            mask = np.expand_dims(particles[:,:,0],-1) # mask is pT==0
+            mask = np.where(mask==0.0, mask, 1.0)
+            print("\n\nSHAPE OF MASK = ")
+            print(np.shape(mask))
+            print("\n\n")
             masked = particles[:,:,:-1]*mask
             tf_part = tf.data.Dataset.from_tensor_slices(masked)
             tf_mask = tf.data.Dataset.from_tensor_slices(mask)
